@@ -1,0 +1,63 @@
+import express from 'express'
+import { config } from 'dotenv'
+import cors from 'cors'
+import morgan from 'morgan'
+import bodyParser from 'body-parser'
+import { connect } from 'mongoose'
+import eventRouter from './modules/users/user.router.js'
+import authRouter from './modules/auth/auth.router.js'
+
+config()
+
+const app = express()
+const port = process.env.PORT || 8080
+
+// Middleware
+const allowedOrigins = [
+  '*',
+  'https://chuadieuphapbinhthanh.vercel.app',
+  'http://localhost:3000',
+  'http://192.168.1.143:3000',
+  'http://localhost:5173',
+  'https://chua-dieu-phap-admin.vercel.app',
+]
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Không được phép truy cập tài nguyên (CORS)'))
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Disposition'],
+}
+
+// Middleware
+app.use(cors(corsOptions))
+app.use(morgan('dev'))
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
+
+// Ignore favicon.ico
+app.get('/favicon.ico', (_, res) => res.sendStatus(204))
+
+// Routes
+app.use('/api/events', eventRouter)
+app.use('/api/auth', authRouter)
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' })
+})
+
+// 500 handler
+app.use((err, req, res, next) => {
+  console.error('❌ Server error:', err)
+  res.status(500).json({ error: 'Internal Server Error' })
+})
+
+export default app
