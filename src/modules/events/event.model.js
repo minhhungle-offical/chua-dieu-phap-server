@@ -19,7 +19,7 @@ const eventSchema = new mongoose.Schema(
     shortDescription: {
       type: String,
       trim: true,
-      maxlength: [200, 'Mô tả ngắn không được vượt quá 200 ký tự'],
+      maxlength: [500, 'Mô tả ngắn không được vượt quá 500 ký tự'],
     },
 
     // Event start date: required date

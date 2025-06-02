@@ -1,11 +1,11 @@
-import express from 'express'
-import { config } from 'dotenv'
-import cors from 'cors'
-import morgan from 'morgan'
 import bodyParser from 'body-parser'
-import { connect } from 'mongoose'
-import eventRouter from './modules/users/user.router.js'
+import cors from 'cors'
+import { config } from 'dotenv'
+import express from 'express'
+import morgan from 'morgan'
 import authRouter from './modules/auth/auth.router.js'
+import userRouter from './modules/users/user.router.js'
+import eventRouter from './modules/events/event.router.js'
 
 config()
 
@@ -48,6 +48,7 @@ app.get('/favicon.ico', (_, res) => res.sendStatus(204))
 // Routes
 app.use('/api/events', eventRouter)
 app.use('/api/auth', authRouter)
+app.use('/api/users', userRouter)
 
 // 404 handler
 app.use((req, res) => {

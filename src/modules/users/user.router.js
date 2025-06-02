@@ -21,14 +21,14 @@ const userRouter = express.Router()
 userRouter.use(authMiddleware)
 
 // Authenticated user: Get own profile
-userRouter.get('/profile/me', authorize(['admin', 'staff', 'user']), getProfile)
+userRouter.get('/profile', authMiddleware, authorize(['admin', 'staff', 'user']), getProfile)
 
 // Authenticated user: Update own profile
-userRouter.put('/profile/me', authorize(['admin', 'staff', 'user']), updateProfile)
+userRouter.put('/profile', authorize(['admin', 'staff', 'user']), updateProfile)
 
 // Authenticated user: Upload or update avatar
 userRouter.put(
-  '/profile/me/avatar',
+  '/profile/avatar',
   authorize(['admin', 'staff', 'user']),
   singleUpload,
   handleMulterError,
