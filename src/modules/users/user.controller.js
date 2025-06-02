@@ -3,19 +3,14 @@ import User from './user.model.js'
 import { STATUS_CODES } from '../../utils/httpStatusCodes.js'
 import { sendSuccess, sendError } from '../../utils/response.js'
 
-/**
- * Remove sensitive fields from user object.
- */
+// Utility to remove sensitive fields like password
 const sanitizeUser = (user) => {
   const userObj = typeof user.toObject === 'function' ? user.toObject() : { ...user }
   delete userObj.password
   return userObj
 }
 
-/**
- * GET /users
- * Retrieve paginated, searchable, and sortable list of users.
- */
+// GET /users - Get paginated, searchable, and sortable list of users
 export const getUsers = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc' } = req.query
@@ -50,10 +45,7 @@ export const getUsers = async (req, res, next) => {
   }
 }
 
-/**
- * GET /users/:id
- * Retrieve a single user by ID.
- */
+// GET /users/:id - Get user by ID
 export const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select('-password').lean()
@@ -65,10 +57,7 @@ export const getUserById = async (req, res, next) => {
   }
 }
 
-/**
- * POST /users
- * Create a new user with hashed password.
- */
+// POST /users - Create new user
 export const createUser = async (req, res, next) => {
   try {
     const { name, email, phone, role = 'user', ...rest } = req.body
@@ -77,7 +66,6 @@ export const createUser = async (req, res, next) => {
       return sendError(res, STATUS_CODES.BAD_REQUEST, 'Name, email, and phone are required')
     }
 
-    // Check email unique
     const existingUser = await User.findOne({ email })
     if (existingUser) {
       return sendError(res, STATUS_CODES.CONFLICT, 'Email already in use')
@@ -99,10 +87,7 @@ export const createUser = async (req, res, next) => {
   }
 }
 
-/**
- * PUT /users/:id
- * Update a user (excluding password).
- */
+// PUT /users/:id - Update user info (excluding password)
 export const updateUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id)
@@ -118,10 +103,7 @@ export const updateUser = async (req, res, next) => {
   }
 }
 
-/**
- * DELETE /users/:id
- * Delete a user.
- */
+// DELETE /users/:id - Delete user by ID
 export const deleteUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id)
@@ -134,15 +116,12 @@ export const deleteUser = async (req, res, next) => {
   }
 }
 
-/**
- * PUT /users/:id/change-password
- * Change user password after verifying old password.
- */
+// PUT /users/:id/change-password - Change password with old password verification
 export const changePassword = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body
     if (!oldPassword || !newPassword) {
-      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Both old and new passwords are required')
+      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Old and new passwords are required')
     }
 
     const user = await User.findById(req.params.id)
@@ -150,7 +129,7 @@ export const changePassword = async (req, res, next) => {
 
     const isMatch = await bcrypt.compare(oldPassword, user.password)
     if (!isMatch) {
-      return sendError(res, STATUS_CODES.UNAUTHORIZED, 'Incorrect old password')
+      return sendError(res, STATUS_CODES.UNAUTHORIZED, 'Old password is incorrect')
     }
 
     user.password = await bcrypt.hash(newPassword, 10)
@@ -162,10 +141,7 @@ export const changePassword = async (req, res, next) => {
   }
 }
 
-/**
- * GET /users/profile
- * Get the current authenticated user's profile.
- */
+// GET /users/profile - Get current user's profile
 export const getProfile = async (req, res, next) => {
   try {
     const userId = req.user?._id
@@ -180,10 +156,7 @@ export const getProfile = async (req, res, next) => {
   }
 }
 
-/**
- * PUT /users/profile
- * Update authenticated user's profile (excluding password).
- */
+// PUT /users/profile - Update current user's profile
 export const updateProfile = async (req, res, next) => {
   try {
     const user = req.user
@@ -199,10 +172,7 @@ export const updateProfile = async (req, res, next) => {
   }
 }
 
-/**
- * PUT /users/profile/avatar
- * Upload or update user's avatar.
- */
+// PUT /users/profile/avatar - Upload or update user's avatar
 export const uploadAvatar = async (req, res, next) => {
   try {
     const user = req.user
