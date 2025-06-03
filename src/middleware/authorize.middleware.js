@@ -1,5 +1,4 @@
 export const authorize = (allowedRoles = []) => {
-  // Cho phép truyền 1 role duy nhất dưới dạng string
   if (!Array.isArray(allowedRoles)) {
     allowedRoles = [allowedRoles]
   }

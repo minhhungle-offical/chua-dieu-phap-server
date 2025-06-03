@@ -6,6 +6,9 @@ import morgan from 'morgan'
 import authRouter from './modules/auth/auth.router.js'
 import userRouter from './modules/users/user.router.js'
 import eventRouter from './modules/events/event.router.js'
+import postCategoryRouter from './modules/post-categories/postCategory.router.js'
+import postRouter from './modules/posts/post.router.js'
+import uploadRouter from './modules/upload/upload.router.js'
 
 config()
 
@@ -49,6 +52,9 @@ app.get('/favicon.ico', (_, res) => res.sendStatus(204))
 app.use('/api/events', eventRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/users', userRouter)
+app.use('/api/post-categories', postCategoryRouter)
+app.use('/api/posts', postRouter)
+app.use('/api/upload', uploadRouter)
 
 // 404 handler
 app.use((req, res) => {

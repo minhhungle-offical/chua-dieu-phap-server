@@ -5,7 +5,7 @@ export async function generateUniqueSlug(name, Model, currentId = null) {
   let slug = baseSlug
   let suffix = 1
 
-  let slugExists = await Model.findOne({
+  let slugExists = await Model?.findOne({
     slug,
     _id: { $ne: currentId },
   })

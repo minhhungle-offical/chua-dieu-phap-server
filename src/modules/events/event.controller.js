@@ -61,33 +61,36 @@ export const getAllEvents = async (req, res) => {
       isActive,
       sortBy = 'createdAt',
       order = 'desc',
-      startDateFrom,
-      startDateTo,
+      startDateFrom, // filter startDate from this date (inclusive)
+      endDateTo, // filter endDate up to this date (inclusive)
       createdBy,
-      participant,
       slug,
     } = req.query
 
     const filter = {}
 
+    // filter by isActive, search, slug, createdBy
     if (isActive !== undefined) filter.isActive = isActive === 'true'
     if (search) filter.title = { $regex: search, $options: 'i' }
     if (slug) filter.slug = slug.trim().toLowerCase()
     if (createdBy) filter.createdBy = createdBy
-    if (participant) filter.participants = participant
-    if (startDateFrom || startDateTo) {
-      filter.startDate = {}
-      if (startDateFrom) filter.startDate.$gte = new Date(startDateFrom)
-      if (startDateTo) filter.startDate.$lte = new Date(startDateTo)
+
+    // filter startDate from startDateFrom onwards
+    if (startDateFrom) {
+      filter.startDate = { $gte: new Date(startDateFrom) }
     }
 
+    // filter endDate up to endDateTo
+    if (endDateTo) {
+      filter.endDate = { $lte: new Date(endDateTo) }
+    }
     const allowedSortFields = ['createdAt', 'startDate', 'endDate', 'title', 'slug']
     if (!allowedSortFields.includes(sortBy)) sortBy = 'createdAt'
 
     const sortOptions = {
-      endDate: 1,
       [sortBy]: order === 'desc' ? -1 : 1,
     }
+
     const skip = (page - 1) * limit
 
     const [events, total] = await Promise.all([
@@ -170,6 +173,7 @@ export const updateEvent = async (req, res) => {
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         event[field] = req.body[field]
+        event['isActive'] = true
       }
     })
 
