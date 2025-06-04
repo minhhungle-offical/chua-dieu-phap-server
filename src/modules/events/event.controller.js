@@ -139,6 +139,25 @@ export const getEventById = async (req, res) => {
   }
 }
 
+// Get event by slug
+export const getEventBySlug = async (req, res) => {
+  try {
+    const event = await Event.findOne({ slug: req.params.slug }).populate('createdBy', 'name email')
+
+    if (!event) {
+      return sendError(res, STATUS_CODES.NOT_FOUND, 'Event not found')
+    }
+
+    return sendSuccess(res, 'Event fetched successfully', event)
+  } catch (error) {
+    return sendError(
+      res,
+      STATUS_CODES.INTERNAL_SERVER_ERROR,
+      `Failed to fetch event: ${error.message}`,
+    )
+  }
+}
+
 // Update an existing event
 export const updateEvent = async (req, res) => {
   try {

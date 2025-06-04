@@ -16,6 +16,7 @@ const eventRouter = express.Router()
 // Public routes - accessible without authentication
 eventRouter.get('/', getAllEvents)
 eventRouter.get('/:id', getEventById)
+eventRouter.get('/slug/:slug', getPostBySlug)
 
 // Apply authentication middleware for all routes below
 eventRouter.use(authMiddleware)
