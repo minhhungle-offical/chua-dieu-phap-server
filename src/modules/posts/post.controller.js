@@ -89,6 +89,21 @@ export const getPostById = async (req, res) => {
   }
 }
 
+// Get Post by Slug
+export const getPostBySlug = async (req, res) => {
+  try {
+    const post = await Post.findOne({ slug: req.params.slug })
+      .populate('category', 'name')
+      .populate('author', 'name email')
+
+    if (!post) return sendError(res, STATUS_CODES.NOT_FOUND, 'Không tìm thấy bài viết')
+
+    return sendSuccess(res, 'Lấy bài viết thành công', post)
+  } catch (err) {
+    return sendError(res, STATUS_CODES.INTERNAL_SERVER, err.message)
+  }
+}
+
 // Update Post
 export const updatePost = async (req, res) => {
   try {
