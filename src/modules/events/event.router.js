@@ -19,12 +19,10 @@ eventRouter.get('/', getAllEvents)
 eventRouter.get('/:id', getEventById)
 eventRouter.get('/slug/:slug', getEventBySlug)
 
-// Apply authentication middleware for all routes below
-eventRouter.use(authMiddleware)
-
 // Create event - only admin and staff can create events
 eventRouter.post(
   '/',
+  authMiddleware,
   authorize(['admin', 'staff']),
   singleUpload, // handle thumbnail upload (field name: 'thumbnail')
   handleMulterError,
@@ -32,9 +30,16 @@ eventRouter.post(
 )
 
 // Update event - only admin and staff can update events
-eventRouter.put('/:id', authorize(['admin', 'staff']), singleUpload, handleMulterError, updateEvent)
+eventRouter.put(
+  '/:id',
+  authMiddleware,
+  authorize(['admin', 'staff']),
+  singleUpload,
+  handleMulterError,
+  updateEvent,
+)
 
 // Delete event - only admin can delete events
-eventRouter.delete('/:id', authorize(['admin']), deleteEvent)
+eventRouter.delete('/:id', authMiddleware, authorize(['admin']), deleteEvent)
 
 export default eventRouter
