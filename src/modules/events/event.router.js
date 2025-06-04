@@ -1,22 +1,23 @@
 import express from 'express'
-import {
-  createEvent,
-  getAllEvents,
-  getEventById,
-  updateEvent,
-  deleteEvent,
-} from './event.controller.js'
 import { authMiddleware } from '../../middleware/auth.middleware.js'
 import { authorize } from '../../middleware/authorize.middleware.js'
-import { singleUpload } from '../../middleware/upload.js'
 import { handleMulterError } from '../../middleware/handleMulterError.js'
+import { singleUpload } from '../../middleware/upload.js'
+import {
+  createEvent,
+  deleteEvent,
+  getAllEvents,
+  getEventById,
+  getEventBySlug,
+  updateEvent,
+} from './event.controller.js'
 
 const eventRouter = express.Router()
 
 // Public routes - accessible without authentication
 eventRouter.get('/', getAllEvents)
 eventRouter.get('/:id', getEventById)
-eventRouter.get('/slug/:slug', getPostBySlug)
+eventRouter.get('/slug/:slug', getEventBySlug)
 
 // Apply authentication middleware for all routes below
 eventRouter.use(authMiddleware)
