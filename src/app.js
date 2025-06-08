@@ -9,6 +9,7 @@ import eventRouter from './modules/events/event.router.js'
 import postCategoryRouter from './modules/post-categories/postCategory.router.js'
 import postRouter from './modules/posts/post.router.js'
 import uploadRouter from './modules/upload/upload.router.js'
+import participantRoutes from './modules/Participants/participant.router.js'
 
 config()
 
@@ -55,6 +56,7 @@ app.use('/api/users', userRouter)
 app.use('/api/post-categories', postCategoryRouter)
 app.use('/api/posts', postRouter)
 app.use('/api/upload', uploadRouter)
+app.use('/api/participants', participantRoutes)
 
 // 404 handler
 app.use((req, res) => {
