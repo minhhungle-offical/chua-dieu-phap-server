@@ -2,7 +2,7 @@ import { generateSecureOTP } from '../../utils/generateSecureOTP.js'
 import { sendOtpEmail } from '../../utils/sendOtpEmail.js'
 import { sendQrEmail } from '../../utils/sendQREmail.js'
 import Event from '../events/event.model.js'
-import Participant from './Participant.model.js'
+import Participant from './participant.model.js'
 
 /**
  * Tạo mới participant (người tham gia sự kiện).
