@@ -7,6 +7,7 @@ const participantSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       trim: true,
@@ -14,7 +15,7 @@ const participantSchema = new mongoose.Schema(
       match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
 
-    phoneNumber: {
+    phone: {
       type: String,
       trim: true,
       match: /^[0-9]{8,15}$/,
@@ -87,6 +88,13 @@ const participantSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    dharmaName: String,
+    birthday: Date,
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'other'],
+    },
+    address: String,
   },
   {
     timestamps: true,

@@ -88,14 +88,6 @@ const eventSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    // Danh sách người tham gia sự kiện (array các ObjectId của User)
-    participants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-
     // Trạng thái kích hoạt sự kiện (mặc định: true)
     isActive: {
       type: Boolean,
