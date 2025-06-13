@@ -2,84 +2,90 @@ import mongoose from 'mongoose'
 
 const participantSchema = new mongoose.Schema(
   {
+    // ==== 1. Basic personal info ====
     name: {
       type: String,
       required: true,
       trim: true,
     },
-
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    },
-
-    phone: {
-      type: String,
-      trim: true,
-      match: /^[0-9]{8,15}$/,
-    },
-
-    note: {
-      type: String,
-      trim: true,
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'confirmed', 'canceled'],
-      default: 'pending',
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    event: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Event',
+    dharmaName: String,
+    birthday: {
+      type: Date,
       required: true,
     },
-    robeOption: {
+    gender: {
       type: String,
-      enum: ['none', 'borrow', 'buy'],
-      default: 'none',
+      enum: ['male', 'female', 'other'],
     },
-    robeSize: {
+    job: {
       type: String,
-      enum: ['S', 'M', 'L', 'XL', 'XXL'],
-      default: null,
+      trim: true,
+      default: '',
     },
+    address: String,
     avatar: {
       type: String,
       trim: true,
       default: '',
     },
 
-    job: {
+    // ==== 2. Contact info ====
+    email: {
       type: String,
       trim: true,
-      default: '',
+      lowercase: true,
+      match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    },
+    phone: {
+      type: String,
+      trim: true,
+      match: /^[0-9]{8,15}$/,
+    },
+
+    // ==== 3. Event info ====
+    event: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Event',
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'confirmed', 'canceled'],
+      default: 'pending',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isFirstTime: {
+      type: Boolean,
+      default: true,
     },
     infoSource: {
       type: String,
       trim: true,
       default: '',
     },
-    isFirstTime: {
-      type: Boolean,
-      default: true,
-    },
-    hasAgreed: {
-      type: Boolean,
-      required: true,
-      default: false,
+    note: {
+      type: String,
+      trim: true,
     },
 
-    otp: { type: String, default: null },
-    expiresAt: { type: Date, default: null },
-    isEmailVerified: { type: Boolean, default: false },
+    // ==== 4. Retreat-specific options ====
+    retreatInfo: {
+      robeOption: {
+        type: String,
+        enum: ['none', 'borrow', 'buy'],
+        default: 'none',
+      },
+      robeSize: {
+        type: String,
+        enum: ['S', 'M', 'L', 'XL', 'XXL'],
+        default: null,
+      },
+    },
 
+    // ==== 5. Check-in & approval ====
     isCheckedIn: {
       type: Boolean,
       default: false,
@@ -88,16 +94,19 @@ const participantSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    dharmaName: String,
-    birthday: Date,
-    gender: {
-      type: String,
-      enum: ['male', 'female', 'other'],
+    hasAgreed: {
+      type: Boolean,
+      required: true,
+      default: false,
     },
-    address: String,
+
+    // ==== 6. OTP verification ====
+    otp: { type: String, default: null },
+    expiresAt: { type: Date, default: null },
+    isEmailVerified: { type: Boolean, default: false },
   },
   {
-    timestamps: true,
+    timestamps: true, // createdAt, updatedAt
     versionKey: false,
   },
 )

@@ -14,22 +14,21 @@ import {
 
 const eventRouter = express.Router()
 
-// Public routes - accessible without authentication
-eventRouter.get('/', getAllEvents)
-eventRouter.get('/:id', getEventById)
-eventRouter.get('/slug/:slug', getEventBySlug)
+// 🔓 Public routes
+eventRouter.get('/', getAllEvents) // List all events
+eventRouter.get('/slug/:slug', getEventBySlug) // Get event by slug (must come before /:id)
+eventRouter.get('/:id', getEventById) // Get event by ID
 
-// Create event - only admin and staff can create events
+// 🔐 Protected routes - Admin & Staff
 eventRouter.post(
   '/',
   authMiddleware,
   authorize(['admin', 'staff']),
-  singleUpload, // handle thumbnail upload (field name: 'thumbnail')
+  singleUpload, // expects req.file from field 'thumbnail'
   handleMulterError,
   createEvent,
 )
 
-// Update event - only admin and staff can update events
 eventRouter.put(
   '/:id',
   authMiddleware,
@@ -39,7 +38,7 @@ eventRouter.put(
   updateEvent,
 )
 
-// Delete event - only admin can delete events
+// 🔐 Delete route - Only Admin
 eventRouter.delete('/:id', authMiddleware, authorize(['admin']), deleteEvent)
 
 export default eventRouter

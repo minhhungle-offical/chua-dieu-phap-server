@@ -1,10 +1,13 @@
+import cloudinary from '../../config/cloudinary.js'
+import { generateUniqueSlug } from '../../helper/slugHelper.js'
 import { STATUS_CODES } from '../../utils/httpStatusCodes.js'
 import { sendError, sendSuccess } from '../../utils/response.js'
-import cloudinary from '../../config/cloudinary.js'
 import Event from './event.model.js'
-import { generateUniqueSlug } from '../../helper/slugHelper.js'
 
-// Tạo sự kiện mới
+// Danh sách giá trị hợp lệ cho type (enum)
+const validEventTypes = ['apc', 'retreat', 'offering', 'dharmaTalk', 'other']
+
+// Create event
 export const createEvent = async (req, res) => {
   try {
     const {
@@ -17,33 +20,28 @@ export const createEvent = async (req, res) => {
       endTime,
       price,
       capacity,
+      type,
     } = req.body
 
-    // Kiểm tra các trường bắt buộc
     if (!title || !startDate || !startTime) {
-      return sendError(
-        res,
-        STATUS_CODES.BAD_REQUEST,
-        'Vui lòng cung cấp đầy đủ: tiêu đề, ngày bắt đầu và giờ bắt đầu',
-      )
+      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Missing required fields')
     }
 
-    // Kiểm tra giá tiền nếu có
     if (price !== undefined && isNaN(Number(price))) {
-      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Giá tiền phải là số hợp lệ')
+      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Price must be a number')
     }
-    // Kiểm tra số lượng nếu có
+
     if (capacity !== undefined && (!Number.isInteger(Number(capacity)) || Number(capacity) < 0)) {
-      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Số lượng phải là số nguyên không âm')
+      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Capacity must be a non-negative integer')
     }
 
-    // Tạo slug duy nhất từ tiêu đề
-    const slug = await generateUniqueSlug(title, Event)
+    if (type && !validEventTypes.includes(type)) {
+      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Invalid event type')
+    }
 
-    // Xử lý upload ảnh thumbnail (nếu có)
+    const slug = await generateUniqueSlug(title, Event)
     const thumbnail = req.file ? { url: req.file.path, publicId: req.file.filename } : {}
 
-    // Tạo bản ghi event mới trong database
     const event = await Event.create({
       title,
       description,
@@ -56,29 +54,24 @@ export const createEvent = async (req, res) => {
       capacity,
       slug,
       thumbnail,
+      type,
       createdBy: req.user._id,
     })
 
-    return sendSuccess(res, 'Tạo sự kiện thành công', event, STATUS_CODES.CREATED)
+    return sendSuccess(res, 'Event created successfully', event, STATUS_CODES.CREATED)
   } catch (error) {
-    // Xử lý lỗi trùng slug
     if (error.code === 11000 && error.keyPattern?.slug) {
-      return sendError(
-        res,
-        STATUS_CODES.BAD_REQUEST,
-        'Slug sự kiện đã tồn tại, vui lòng đổi tên khác',
-      )
+      return sendError(res, STATUS_CODES.BAD_REQUEST, 'Slug already exists')
     }
-    // Lỗi server khác
     return sendError(
       res,
       STATUS_CODES.INTERNAL_SERVER_ERROR,
-      `Tạo sự kiện thất bại: ${error.message}`,
+      `Create event failed: ${error.message}`,
     )
   }
 }
 
-// Lấy danh sách sự kiện với filter, phân trang, sắp xếp
+// Get all events
 export const getAllEvents = async (req, res) => {
   try {
     let {
@@ -96,43 +89,32 @@ export const getAllEvents = async (req, res) => {
       priceMax,
       capacityMin,
       capacityMax,
+      type,
     } = req.query
 
     const filter = {}
 
-    // Lọc theo trạng thái kích hoạt
-    if (isActive !== undefined) filter.isActive = isActive === 'true'
-    // Lọc theo tìm kiếm tiêu đề (regex, không phân biệt hoa thường)
     if (search) filter.title = { $regex: search, $options: 'i' }
-    // Lọc theo slug
+    if (isActive !== undefined) filter.isActive = isActive === 'true'
     if (slug) filter.slug = slug.trim().toLowerCase()
-    // Lọc theo người tạo
     if (createdBy) filter.createdBy = createdBy
+    if (type && validEventTypes.includes(type)) filter.type = type
 
-    // Lọc theo ngày bắt đầu từ ngày cụ thể
-    if (startDateFrom) {
-      filter.startDate = { $gte: new Date(startDateFrom) }
-    }
-    // Lọc theo ngày kết thúc đến ngày cụ thể
-    if (endDateTo) {
-      filter.endDate = { $lte: new Date(endDateTo) }
-    }
+    if (startDateFrom) filter.startDate = { $gte: new Date(startDateFrom) }
+    if (endDateTo) filter.endDate = { ...filter.endDate, $lte: new Date(endDateTo) }
 
-    // Lọc theo khoảng giá tiền nếu có
     if (priceMin !== undefined || priceMax !== undefined) {
       filter.price = {}
       if (priceMin !== undefined) filter.price.$gte = Number(priceMin)
       if (priceMax !== undefined) filter.price.$lte = Number(priceMax)
     }
 
-    // Lọc theo khoảng số lượng nếu có
     if (capacityMin !== undefined || capacityMax !== undefined) {
       filter.capacity = {}
       if (capacityMin !== undefined) filter.capacity.$gte = Number(capacityMin)
       if (capacityMax !== undefined) filter.capacity.$lte = Number(capacityMax)
     }
 
-    // Các trường được phép sắp xếp
     const allowedSortFields = [
       'createdAt',
       'startDate',
@@ -144,13 +126,9 @@ export const getAllEvents = async (req, res) => {
     ]
     if (!allowedSortFields.includes(sortBy)) sortBy = 'createdAt'
 
-    const sortOptions = {
-      [sortBy]: order === 'desc' ? -1 : 1,
-    }
-
+    const sortOptions = { [sortBy]: order === 'desc' ? -1 : 1 }
     const skip = (page - 1) * limit
 
-    // Thực hiện truy vấn lấy dữ liệu
     const [events, total] = await Promise.all([
       Event.find(filter)
         .populate('createdBy', 'name email')
@@ -160,8 +138,7 @@ export const getAllEvents = async (req, res) => {
       Event.countDocuments(filter),
     ])
 
-    // Trả về dữ liệu cùng meta phân trang
-    return sendSuccess(res, 'Lấy danh sách sự kiện thành công', {
+    return sendSuccess(res, 'Fetched events successfully', {
       data: events,
       meta: {
         total,
@@ -174,69 +151,54 @@ export const getAllEvents = async (req, res) => {
     return sendError(
       res,
       STATUS_CODES.INTERNAL_SERVER_ERROR,
-      `Lấy danh sách sự kiện thất bại: ${error.message}`,
+      `Fetch events failed: ${error.message}`,
     )
   }
 }
 
-// Lấy chi tiết sự kiện theo ID
+// Get by ID
 export const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).populate('createdBy', 'name email')
-
-    if (!event) {
-      return sendError(res, STATUS_CODES.NOT_FOUND, 'Không tìm thấy sự kiện')
-    }
-
-    return sendSuccess(res, 'Lấy thông tin sự kiện thành công', event)
+    if (!event) return sendError(res, STATUS_CODES.NOT_FOUND, 'Event not found')
+    return sendSuccess(res, 'Fetched event successfully', event)
   } catch (error) {
     return sendError(
       res,
       STATUS_CODES.INTERNAL_SERVER_ERROR,
-      `Lấy thông tin sự kiện thất bại: ${error.message}`,
+      `Fetch event failed: ${error.message}`,
     )
   }
 }
 
-// Lấy chi tiết sự kiện theo slug
+// Get by Slug
 export const getEventBySlug = async (req, res) => {
   try {
     const event = await Event.findOne({ slug: req.params.slug }).populate('createdBy', 'name email')
-
-    if (!event) {
-      return sendError(res, STATUS_CODES.NOT_FOUND, 'Không tìm thấy sự kiện')
-    }
-
-    return sendSuccess(res, 'Lấy thông tin sự kiện thành công', event)
+    if (!event) return sendError(res, STATUS_CODES.NOT_FOUND, 'Event not found')
+    return sendSuccess(res, 'Fetched event successfully', event)
   } catch (error) {
     return sendError(
       res,
       STATUS_CODES.INTERNAL_SERVER_ERROR,
-      `Lấy thông tin sự kiện thất bại: ${error.message}`,
+      `Fetch event failed: ${error.message}`,
     )
   }
 }
 
-// Cập nhật thông tin sự kiện
+// Update
 export const updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-    if (!event) {
-      return sendError(res, STATUS_CODES.NOT_FOUND, 'Không tìm thấy sự kiện để cập nhật')
-    }
+    if (!event) return sendError(res, STATUS_CODES.NOT_FOUND, 'Event not found')
 
-    // Nếu có upload ảnh mới, xóa ảnh cũ trên Cloudinary rồi cập nhật
     if (req.file) {
       if (event.thumbnail?.publicId) {
         await cloudinary.uploader.destroy(event.thumbnail.publicId)
       }
-      event.thumbnail = {
-        url: req.file.path,
-        publicId: req.file.filename,
-      }
+      event.thumbnail = { url: req.file.path, publicId: req.file.filename }
     }
 
-    // Các trường được phép cập nhật
     const allowedFields = [
       'title',
       'description',
@@ -248,51 +210,42 @@ export const updateEvent = async (req, res) => {
       'isActive',
       'price',
       'capacity',
+      'type',
     ]
 
-    // Gán dữ liệu mới nếu có
-    allowedFields.forEach((field) => {
+    for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
+        if (field === 'type' && !validEventTypes.includes(req.body.type)) {
+          return sendError(res, STATUS_CODES.BAD_REQUEST, 'Invalid event type')
+        }
         event[field] = req.body[field]
       }
-    })
+    }
 
-    // Nếu đổi tiêu đề, tạo lại slug mới
     if (req.body.title && req.body.title !== event.title) {
       event.slug = await generateUniqueSlug(req.body.title, Event, event._id)
     }
 
     await event.save()
-    return sendSuccess(res, 'Cập nhật sự kiện thành công', event)
+    return sendSuccess(res, 'Event updated successfully', event)
   } catch (error) {
-    return sendError(
-      res,
-      STATUS_CODES.INTERNAL_SERVER_ERROR,
-      `Cập nhật sự kiện thất bại: ${error.message}`,
-    )
+    return sendError(res, STATUS_CODES.INTERNAL_SERVER_ERROR, `Update failed: ${error.message}`)
   }
 }
 
-// Xóa sự kiện theo ID
+// Delete
 export const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-    if (!event) {
-      return sendError(res, STATUS_CODES.NOT_FOUND, 'Không tìm thấy sự kiện để xóa')
-    }
+    if (!event) return sendError(res, STATUS_CODES.NOT_FOUND, 'Event not found')
 
-    // Xóa ảnh thumbnail trên Cloudinary nếu có
     if (event.thumbnail?.publicId) {
       await cloudinary.uploader.destroy(event.thumbnail.publicId)
     }
 
     await event.deleteOne()
-    return sendSuccess(res, 'Xóa sự kiện thành công')
+    return sendSuccess(res, 'Event deleted successfully')
   } catch (error) {
-    return sendError(
-      res,
-      STATUS_CODES.INTERNAL_SERVER_ERROR,
-      `Xóa sự kiện thất bại: ${error.message}`,
-    )
+    return sendError(res, STATUS_CODES.INTERNAL_SERVER_ERROR, `Delete failed: ${error.message}`)
   }
 }

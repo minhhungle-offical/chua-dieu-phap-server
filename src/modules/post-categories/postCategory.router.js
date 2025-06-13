@@ -12,14 +12,16 @@ import { authorize } from '../../middleware/authorize.middleware.js'
 
 const postCategoryRouter = express.Router()
 
+// 🔓 Public routes
 postCategoryRouter.get('/', getAllPostCategories)
-postCategoryRouter.get('/active', getActivePostCategories)
+postCategoryRouter.get('/active', getActivePostCategories) // Must come before "/:id"
 postCategoryRouter.get('/:id', getPostCategoryById)
 
-postCategoryRouter.use(authMiddleware)
+// 🔐 Protected routes - only Admin and Staff can access
+postCategoryRouter.post('/', authMiddleware, authorize(['admin', 'staff']), createPostCategory)
 
-postCategoryRouter.post('/', authorize(['admin', 'staff']), createPostCategory)
-postCategoryRouter.put('/:id', authorize(['admin', 'staff']), updatePostCategory)
-postCategoryRouter.delete('/:id', authorize(['admin', 'staff']), deletePostCategory)
+postCategoryRouter.put('/:id', authMiddleware, authorize(['admin', 'staff']), updatePostCategory)
+
+postCategoryRouter.delete('/:id', authMiddleware, authorize(['admin', 'staff']), deletePostCategory)
 
 export default postCategoryRouter

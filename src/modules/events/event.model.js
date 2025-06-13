@@ -2,58 +2,58 @@ import mongoose from 'mongoose'
 
 const eventSchema = new mongoose.Schema(
   {
-    // Tiêu đề sự kiện (bắt buộc, loại bỏ khoảng trắng thừa)
+    // Event title (required, trims excess whitespace)
     title: {
       type: String,
-      required: [true, 'Tiêu đề là bắt buộc'],
+      required: [true, 'Title is required'],
       trim: true,
     },
 
-    // Mô tả chi tiết sự kiện (không bắt buộc)
+    // Full event description (optional)
     description: {
       type: String,
       trim: true,
     },
 
-    // Mô tả ngắn (tối đa 500 ký tự, không bắt buộc)
+    // Short description (max 500 characters, optional)
     shortDescription: {
       type: String,
       trim: true,
-      maxlength: [500, 'Mô tả ngắn không được vượt quá 500 ký tự'],
+      maxlength: [500, 'Short description must not exceed 500 characters'],
     },
 
-    // Ngày bắt đầu sự kiện (bắt buộc)
+    // Start date (required)
     startDate: {
       type: Date,
-      required: [true, 'Ngày bắt đầu là bắt buộc'],
+      required: [true, 'Start date is required'],
     },
 
-    // Ngày kết thúc sự kiện (không bắt buộc, nếu có phải >= startDate)
+    // End date (optional, must be >= startDate if provided)
     endDate: {
       type: Date,
       validate: {
         validator(value) {
-          if (!value) return true // cho phép không có
+          if (!value) return true
           return value >= this.startDate
         },
-        message: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
+        message: 'End date must be greater than or equal to start date',
       },
     },
 
-    // Giờ bắt đầu (bắt buộc, định dạng HH:mm hoặc HH:mm:ss)
+    // Start time (required, format: HH:mm or HH:mm:ss)
     startTime: {
       type: String,
       trim: true,
-      required: [true, 'Thời gian bắt đầu là bắt buộc'],
+      required: [true, 'Start time is required'],
       validate: {
         validator(value) {
           return /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/.test(value)
         },
-        message: 'Thời gian bắt đầu không đúng định dạng HH:mm hoặc HH:mm:ss',
+        message: 'Start time must be in the format HH:mm or HH:mm:ss',
       },
     },
 
-    // Giờ kết thúc (không bắt buộc, nếu có thì phải đúng định dạng)
+    // End time (optional, must be valid time format if provided)
     endTime: {
       type: String,
       trim: true,
@@ -62,55 +62,68 @@ const eventSchema = new mongoose.Schema(
           if (!value) return true
           return /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/.test(value)
         },
-        message: 'Thời gian kết thúc không đúng định dạng HH:mm hoặc HH:mm:ss',
+        message: 'End time must be in the format HH:mm or HH:mm:ss',
       },
     },
 
-    // Ảnh đại diện sự kiện: gồm URL và mã publicId trên Cloudinary
+    // Event thumbnail (Cloudinary URL & publicId)
     thumbnail: {
       url: String,
       publicId: String,
     },
 
-    // Người tạo sự kiện (bắt buộc - tham chiếu tới bảng User)
+    // Created by (reference to User model)
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Người tạo là bắt buộc'],
+      required: [true, 'CreatedBy is required'],
     },
 
-    // Slug duy nhất cho sự kiện (bắt buộc, viết thường, loại bỏ khoảng trắng thừa)
+    // Unique slug (lowercase, trimmed)
     slug: {
       type: String,
-      required: [true, 'Slug là bắt buộc'],
+      required: [true, 'Slug is required'],
       trim: true,
       unique: true,
       lowercase: true,
     },
 
-    // Trạng thái kích hoạt sự kiện (mặc định: true)
+    // Whether the event is active (default: true)
     isActive: {
       type: Boolean,
       default: true,
     },
 
-    // Số lượng người tham gia tối đa (mặc định: 0 = không giới hạn)
+    // Maximum number of participants (0 = unlimited)
     capacity: {
       type: Number,
       default: 0,
       min: 0,
     },
 
-    // Giá vé tham gia sự kiện (mặc định: 0 = miễn phí)
+    // Ticket price (0 = free)
     price: {
       type: Number,
       default: 0,
       min: 0,
     },
+
+    // Event type (enum used to classify the event)
+    // - apc: Summer Rains Retreat (An Cư Kiết Hạ)
+    // - retreat: Meditation or mindfulness retreat (Khóa tu thiền hoặc chánh niệm)
+    // - offering: Donation or offering ceremony ( Lễ cúng dường hoặc hiến tặng)
+    // - dharmaTalk: Dharma talk or lecture (Buổi thuyết pháp hoặc giảng Pháp)
+    // - other: Any other type of event
+    type: {
+      type: String,
+      enum: ['apc', 'retreat', 'offering', 'dharmaTalk', 'other'],
+      required: true,
+      default: 'other',
+    },
   },
   {
-    timestamps: true, // Tự động tạo createdAt & updatedAt
-    versionKey: false, // Không thêm trường __v
+    timestamps: true, // Automatically adds createdAt & updatedAt
+    versionKey: false,
   },
 )
 

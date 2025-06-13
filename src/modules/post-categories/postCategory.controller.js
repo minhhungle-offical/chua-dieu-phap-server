@@ -3,7 +3,7 @@ import { sendSuccess, sendError } from '../../utils/response.js'
 import { STATUS_CODES } from '../../utils/httpStatusCodes.js'
 import { generateUniqueSlug } from '../../helper/slugHelper.js'
 
-// Get all categories (with pagination & search optional)
+// GET: All post categories (with optional pagination, search, filter by isActive)
 export const getAllPostCategories = async (req, res) => {
   try {
     let { page = 1, limit = 10, search = '', isActive } = req.query
@@ -13,6 +13,7 @@ export const getAllPostCategories = async (req, res) => {
     if (search) filter.name = { $regex: search, $options: 'i' }
 
     const skip = (page - 1) * limit
+
     const [categories, total] = await Promise.all([
       PostCategory.find(filter).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
       PostCategory.countDocuments(filter),
@@ -32,29 +33,34 @@ export const getAllPostCategories = async (req, res) => {
   }
 }
 
+// GET: Only active categories
 export const getActivePostCategories = async (req, res) => {
   try {
     const activeCategories = await PostCategory.find({ isActive: true })
       .sort({ createdAt: -1 })
       .populate('createdBy', 'name')
-    return sendSuccess(res, 'Active post categories fetched', activeCategories)
+
+    return sendSuccess(res, 'Active post categories fetched successfully', activeCategories)
   } catch (error) {
-    return sendError(res, 500, error.message)
+    return sendError(res, STATUS_CODES.INTERNAL_SERVER_ERROR, error.message)
   }
 }
 
-// Get one category by ID
+// GET: Category by ID
 export const getPostCategoryById = async (req, res) => {
   try {
     const category = await PostCategory.findById(req.params.id)
-    if (!category) return sendError(res, STATUS_CODES.NOT_FOUND, 'Category not found')
+    if (!category) {
+      return sendError(res, STATUS_CODES.NOT_FOUND, 'Category not found')
+    }
+
     return sendSuccess(res, 'Category fetched successfully', category)
   } catch (error) {
     return sendError(res, STATUS_CODES.INTERNAL_SERVER_ERROR, error.message)
   }
 }
 
-// Create a new category
+// POST: Create a new category
 export const createPostCategory = async (req, res) => {
   const user = req.user
 
@@ -81,19 +87,21 @@ export const createPostCategory = async (req, res) => {
       return sendError(
         res,
         STATUS_CODES.BAD_REQUEST,
-        'Category with this name or slug already exists',
+        'A category with this name or slug already exists',
       )
     }
+
     return sendError(res, STATUS_CODES.INTERNAL_SERVER_ERROR, error.message)
   }
 }
 
-// Update a category by ID
+// PUT: Update a category
 export const updatePostCategory = async (req, res) => {
-  console.log('req.body: ', req.body)
   try {
     const category = await PostCategory.findById(req.params.id)
-    if (!category) return sendError(res, STATUS_CODES.NOT_FOUND, 'Category not found')
+    if (!category) {
+      return sendError(res, STATUS_CODES.NOT_FOUND, 'Category not found')
+    }
 
     const { name, description, isActive } = req.body
 
@@ -113,18 +121,21 @@ export const updatePostCategory = async (req, res) => {
       return sendError(
         res,
         STATUS_CODES.BAD_REQUEST,
-        'Category with this name or slug already exists',
+        'A category with this name or slug already exists',
       )
     }
+
     return sendError(res, STATUS_CODES.INTERNAL_SERVER_ERROR, error.message)
   }
 }
 
-// Delete a category by ID
+// DELETE: Delete a category
 export const deletePostCategory = async (req, res) => {
   try {
     const category = await PostCategory.findById(req.params.id)
-    if (!category) return sendError(res, STATUS_CODES.NOT_FOUND, 'Category not found')
+    if (!category) {
+      return sendError(res, STATUS_CODES.NOT_FOUND, 'Category not found')
+    }
 
     await category.deleteOne()
     return sendSuccess(res, 'Category deleted successfully')
