@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
-import app from './src/app.js'
-import { updateEventStatus } from './src/utils/updateEventStatus.js'
+import app from './app.js'
+import { updateEventStatus } from './utils/updateEventStatus.js'
 
 dotenv.config()
 
