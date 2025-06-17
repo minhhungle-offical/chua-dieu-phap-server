@@ -2,7 +2,7 @@ import multer from 'multer'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import cloudinary from '../config/cloudinary.js'
 
-// Khởi tạo cấu hình lưu trữ lên Cloudinary
+// ===== Cloudinary image storage config =====
 const imageStorage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
@@ -11,34 +11,36 @@ const imageStorage = new CloudinaryStorage({
       public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
       allowed_formats: ['jpg', 'jpeg', 'png'],
       transformation: [
-        { width: 1280, height: 720, crop: 'fill' }, // Tỉ lệ 16:9 (1280x720)
-        { quality: 'auto' }, // Tự động giảm chất lượng để tối ưu
-        { fetch_format: 'auto' }, // Chuyển sang webp nếu cần
+        { width: 1000, crop: 'scale' }, // Resize to width 1000px, keep original aspect ratio
+        { quality: 'auto' }, // Automatically adjust quality for optimization
+        { fetch_format: 'auto' }, // Convert to WebP/AVIF if supported
       ],
     }
   },
 })
 
-// Lọc chỉ cho phép các định dạng ảnh
+// ===== File type filter =====
 const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg']
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true)
   } else {
-    cb(new Error('Only JPG, JPEG, and PNG files are allowed'), false)
+    cb(new Error('Only JPG, JPEG, and PNG formats are allowed.'), false)
   }
 }
 
-// Không giới hạn kích thước file ở đây vì đã xử lý resize/nén ở Cloudinary
+// ===== Multer config (no file size limit, optimized via Cloudinary) =====
 const upload = multer({
   storage: imageStorage,
   fileFilter,
 })
 
-// Middleware cho 1 file ảnh duy nhất (field name: 'thumbnail')
+// ===== Middleware exports =====
+
+// For uploading a single image (field name: 'thumbnail')
 export const singleUpload = upload.single('thumbnail')
 
-// Middleware cho nhiều file ảnh  (field name: 'images')
+// For uploading multiple images (field name: 'images', max 5 files)
 export const multipleUpload = upload.array('images', 5)
 
 export default upload

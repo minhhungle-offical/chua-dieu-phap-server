@@ -2,13 +2,17 @@ import mongoose from 'mongoose'
 
 const participantSchema = new mongoose.Schema(
   {
-    // ==== 1. Basic personal info ====
+    // ==== 1. Basic personal information ====
     name: {
       type: String,
       required: true,
       trim: true,
     },
-    dharmaName: String,
+    dharmaName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     birthday: {
       type: Date,
       required: true,
@@ -22,14 +26,18 @@ const participantSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
-    address: String,
-    avatar: {
+    address: {
       type: String,
       trim: true,
       default: '',
     },
+    avatar: {
+      type: String,
+      trim: true,
+      default: null, // URL to profile image (Cloudinary or local)
+    },
 
-    // ==== 2. Contact info ====
+    // ==== 2. Contact information ====
     email: {
       type: String,
       trim: true,
@@ -42,7 +50,7 @@ const participantSchema = new mongoose.Schema(
       match: /^[0-9]{8,15}$/,
     },
 
-    // ==== 3. Event info ====
+    // ==== 3. Event information ====
     event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Event',
@@ -64,14 +72,44 @@ const participantSchema = new mongoose.Schema(
     infoSource: {
       type: String,
       trim: true,
-      default: '',
+      default: '', // Where participant knew about the event
     },
     note: {
       type: String,
       trim: true,
+      default: '',
     },
 
-    // ==== 4. Retreat-specific options ====
+    // ==== 4. Check-in and approval ====
+    isCheckedIn: {
+      type: Boolean,
+      default: false,
+    },
+    checkedInAt: {
+      type: Date,
+      default: null,
+    },
+    hasAgreed: {
+      type: Boolean,
+      required: true,
+      default: false, // Must agree to event rules or terms
+    },
+
+    // ==== 5. OTP & email verification ====
+    otp: {
+      type: String,
+      default: null,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ==== 6. Retreat-specific options ====
     retreatInfo: {
       robeOption: {
         type: String,
@@ -84,29 +122,9 @@ const participantSchema = new mongoose.Schema(
         default: null,
       },
     },
-
-    // ==== 5. Check-in & approval ====
-    isCheckedIn: {
-      type: Boolean,
-      default: false,
-    },
-    checkedInAt: {
-      type: Date,
-      default: null,
-    },
-    hasAgreed: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-
-    // ==== 6. OTP verification ====
-    otp: { type: String, default: null },
-    expiresAt: { type: Date, default: null },
-    isEmailVerified: { type: Boolean, default: false },
   },
   {
-    timestamps: true, // createdAt, updatedAt
+    timestamps: true, // Automatically adds createdAt and updatedAt
     versionKey: false,
   },
 )

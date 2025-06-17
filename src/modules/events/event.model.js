@@ -109,14 +109,19 @@ const eventSchema = new mongoose.Schema(
     },
 
     // Event type (enum used to classify the event)
-    // - apc: Summer Rains Retreat (An Cư Kiết Hạ)
-    // - retreat: Meditation or mindfulness retreat (Khóa tu thiền hoặc chánh niệm)
-    // - offering: Donation or offering ceremony ( Lễ cúng dường hoặc hiến tặng)
-    // - dharmaTalk: Dharma talk or lecture (Buổi thuyết pháp hoặc giảng Pháp)
-    // - other: Any other type of event
     type: {
       type: String,
-      enum: ['apc', 'retreat', 'offering', 'dharmaTalk', 'other'],
+      enum: [
+        'apc', // An Cư Kiết Đông/Hạ
+        'retreat', // Khóa tu
+        'offering', // Cúng dường
+        'dharmaTalk', // Pháp thoại
+        'meditation', // Khóa thiền
+        'volunteering', // Tình nguyện
+        'youthCamp', // Trại thanh niên
+        'ceremony', // Lễ lớn
+        'other', // Khác
+      ],
       required: true,
       default: 'other',
     },
